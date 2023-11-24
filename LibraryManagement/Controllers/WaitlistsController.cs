@@ -1,7 +1,9 @@
 ﻿using LibraryMangement.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.Language;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -56,28 +58,50 @@ namespace LibraryManagement.Controllers
         [HttpPost]
         public async Task<IActionResult> FulfillWaitlist()
         {
-            var waitlistRequest = _waitListContext.waitlists
+            var successfullyLentBooks = new List<string>();
+            var failedRequests = new List<string>();
+
+            var waitlistRequests = _waitListContext.waitlists    // To get all the waitlist entries from the waitlists table
                 .OrderBy(w => w.RequestedTime)
                 .Include(w => w.Book)
-                .FirstOrDefault();
-
-            if (waitlistRequest != null && waitlistRequest.Book.available_copies > 0)
+                .ToList();
+            foreach (var waitlistRequest in waitlistRequests)
             {
-                var borrowedBook = new BorrowedBooks
+                if (waitlistRequest != null && waitlistRequest.Book.available_copies > 0)
                 {
-                    MemberId = waitlistRequest.MemberId,
-                    BookId = waitlistRequest.BookId,
-                    BorrowDate = DateTime.Now,
-                    DueDate = DateTime.Now.AddDays(14)
-                };
-                _waitListContext.borrowedBooks.Add(borrowedBook);
-                waitlistRequest.Book.available_copies--;
-                _waitListContext.waitlists.Remove(waitlistRequest);
-                await _waitListContext.SaveChangesAsync();
-                return Ok("Book successfully lented");
+                    var borrowedBook = new BorrowedBooks
+                    {
+                        MemberId = waitlistRequest.MemberId,
+                        BookId = waitlistRequest.BookId,
+                        BorrowDate = DateTime.Now,
+                        DueDate = DateTime.Now.AddDays(14)
+                    };
+                    _waitListContext.borrowedBooks.Add(borrowedBook);
+                    waitlistRequest.Book.available_copies--;
+                    _waitListContext.waitlists.Remove(waitlistRequest);
+                    successfullyLentBooks.Add(waitlistRequest.Book.title);
+                }
+                else
+                {
+                    failedRequests.Add(waitlistRequest.Book.title);
+                }
             }
-            else
-                return BadRequest("No items in waitlist");
+
+            await _waitListContext.SaveChangesAsync();
+            if (successfullyLentBooks.Count > 0)
+            {
+                var successMessage = $"Books successfully lent: {string.Join(", ", successfullyLentBooks)}";
+
+                if (failedRequests.Count > 0)
+                {
+                    var failureMessage = $"Failed to lend books: {string.Join(", ", failedRequests)}";
+                    return Ok($"{successMessage}. {failureMessage}");
+                }
+
+                return Ok(successMessage);
+            }
+
+            return BadRequest("No books could be lent.");                               
         }
         public class WaitlistRequest
         {
