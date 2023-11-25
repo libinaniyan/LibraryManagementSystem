@@ -1,27 +1,23 @@
 ﻿using LibraryMangement.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace LibraryMangement.Controllers
 {
-    // Not making the controller as the ApiController since i want to return a view for creating new books , So not inheriting form ControlBase .
-    public class BooksController : Controller
-    {        
+    [Route("api/[controller]")]
+    [ApiController]
+    public class BooksController : ControllerBase
+    {
         private readonly LibraryMangementContext _bookContext;
 
         public BooksController(LibraryMangementContext context)
         {
             _bookContext = context;
         }
-        //A sample razor view for submitting entries
-        [HttpGet("api/Books/Create")]
-        public ActionResult CreateBooks()
-        {
-            return View();
-        }
 
-        [HttpPost("api/Books/Create")]
+        [HttpPost]
         public async Task<IActionResult> CreateBooks(Books book)
         {
             if (book.available_copies < 0 || book.available_copies > book.total_copies)
@@ -32,66 +28,43 @@ namespace LibraryMangement.Controllers
             {
                 _bookContext.books.Add(book);
                 await _bookContext.SaveChangesAsync();
-                return Ok("Added Successsfully");
+                return Ok("Book created Successsfully");
             }
             return NoContent();
         }
 
-        [HttpGet("api/Books/List/{id}")]
-        public async Task<IActionResult> GetBook(int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetBooks(int id)
         {
             var book = await _bookContext.books.FindAsync(id);
             if (book == null)
             {
-                return NotFound();
+                return NotFound($"No record of book with id:{id}");
             }
-            return Ok("Fetched the book details");
-        }     
-
-       //Using HttpPatch instead of Put allowing any single field update to be possible
-        [HttpPatch("api/Books/Update/{id}")] 
-        public async Task<IActionResult> Update(int id,[FromBody] Books book)
+            return Ok("Fetched the book details successfully.");
+        }
+    
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBooks(int id, [FromBody] Books book)
         {
-            // using this because currently we are not passing the id in the request body  and to check the body is null or not.
+            //using this because currently we are not passing the id in the request body.
             if (book != null)
             {
                 book.id = id;
-            }             
-            var existingBook = await _bookContext.books.FindAsync(id);
+            }
+            var existingBook = BookExists(id);
 
-            if (existingBook == null)
+            if (existingBook)
             {
-                return BadRequest($"Book with ID {id} not found.");
-            }
-            if (book.total_copies == 0)
-            {
-                book.total_copies = existingBook.total_copies;
-            }
-            foreach (var property in typeof(Books).GetProperties())
-            {
-                var updatedValue = property.GetValue(book);
-                if (updatedValue != null)
-                {
-                    if (property.Name == "Price" && (decimal)updatedValue < 0)
-                    {
-                        return BadRequest("Price cannot be negative.");
-                    }
-                    property.SetValue(existingBook, updatedValue);
-                }
-            }
-            try
-            {
+                _bookContext.Entry(book).State = EntityState.Modified;
                 await _bookContext.SaveChangesAsync();
-                return Ok($"Book with ID {id} updated successfully.");
+                return Ok("Book details updated successfully");              
             }
-            catch
-            {
-                return BadRequest($"Failed to update the book with ID {id}.");
-            }
-        }
-                                
-        [HttpDelete("api/Books/Delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+            return BadRequest($"Book with ID {id} not found.");
+        }           
+                   
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBooks(int id)
         {
             var exists = BookExists(id);           
             if (exists)
@@ -101,13 +74,12 @@ namespace LibraryMangement.Controllers
                 await _bookContext.SaveChangesAsync();
                 return Ok("Deleted Succesfully");
             }
-            else return NotFound();
+            else return NotFound($"No record of book with id:{id}");
         }
         private bool BookExists(int id)
         {
             return _bookContext.books.Any(e => e.id == id);
         }
-    }
-
-
+       
+    }   
 }

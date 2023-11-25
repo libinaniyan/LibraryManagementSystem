@@ -12,12 +12,10 @@ namespace LibraryMangement.Models
 
         [Required(ErrorMessage = "First name is required.")]
         [MaxLength(25)]
-        [Display(Name = "First Name")]
         public string FirstName { get; set; }
 
         [Required(ErrorMessage = "Last name is required.")]
         [MaxLength(25)]
-        [Display(Name = "Last Name")]
         public string LastName { get; set; }
 
         [Required(ErrorMessage = "Email is required.")]
@@ -25,7 +23,6 @@ namespace LibraryMangement.Models
         [EmailAddress]      
         public string Email { get; set; }
        
-        [Display(Name = "Date of Birth")]
         public DateTime? DateOfBirth { get; set; }
     }
 }
