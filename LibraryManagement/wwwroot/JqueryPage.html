@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Details</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+
+    <label for="bookId">Enter Book ID:</label>
+    <input type="text" id="bookId">
+    <button id="getBookDetails">Get Book Details</button>
+
+    <div id="bookDetails">
+        <!-- Book details will be displayed here -->
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Button click event
+            $("#getBookDetails").on("click", function () {
+                // Get the book ID from the input field
+                var bookId = $("#bookId").val();
+
+                // Make an AJAX call to the endpoint
+                $.ajax({
+                    url: "/api/Books/" + bookId,
+                    method: "GET",
+                    dataType: "json",
+                    
+                    success: function (data) {
+                        // Update the UI with the book details
+                        $("#bookDetails").html("<p>Title: " + data.title + "</p><p>Author: " + data.author + "</p>");
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error: " + error);
+                        // You can handle errors here and display a message to the user
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

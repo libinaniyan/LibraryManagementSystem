@@ -41,7 +41,8 @@ namespace LibraryMangement.Controllers
             {
                 return NotFound($"No record of book with id:{id}");
             }
-            return Ok("Fetched the book details successfully.");
+            //return Ok("Fetched the book details successfully.");
+            return new JsonResult(book);
         }
     
         [HttpPut("{id}")]

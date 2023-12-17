@@ -74,9 +74,10 @@ namespace LibraryManagement.Controllers
             
             else // if the member limit is over
             {
-                return NotFound("Member book lent limit is over");
+                return NotFound(new{Message="Member book lent limit is over"});
+
             }
-            return Ok("Book successfully lent.");
+            return Ok(new { Message = "Book successfully lent." });
         }
       
         [HttpPost("return")]
@@ -176,9 +177,5 @@ namespace LibraryManagement.Controllers
     {
         public string Barcode { get; set; }
     }
-
-
-
-
 }
 
