@@ -1,4 +1,5 @@
 ﻿using LibraryMangement.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -74,7 +75,7 @@ namespace LibraryManagement.Controllers
         }
         private bool MembersExists(int id)
         {
-            return _memberContext.members.Any(e => e.Id == id);
+            return  _memberContext.members.Any(e => e.Id == id);
         }
     }
 }
